@@ -1,6 +1,6 @@
 FROM node:20-slim AS builder
 
-RUN apk update && apk add --no-cache git ffmpeg wget curl bash openssl build-essential python3 libvips-dev libvips && rm -rf /var/lib/apt/lists
+RUN apt-get update && apt-get install -y git ffmpeg wget curl bash openssl build-essential python3 libvips-dev  libvips vips-tools && rm -rf /var/lib/apt/lists/* 
 
 
 LABEL version="2.3.1" description="Api to control whatsapp features through http requests." 
@@ -13,7 +13,7 @@ COPY ./package*.json ./
 COPY ./tsconfig.json ./
 COPY ./tsup.config.ts ./
 
-RUN npm ci --silent
+RUN npm cache clean --force && npm ci --silent
 
 COPY ./src ./src
 COPY ./public ./public
@@ -32,8 +32,9 @@ RUN npm run build
 
 FROM node:20-slim AS final
 
-RUN apk update && \
-    apk add tzdata ffmpeg bash openssl
+RUN apt-get update && \
+    apt-get install -y tzdata ffmpeg bash openssl \
+    && rm -rf /var/lib/apt/lists//*
 
 ENV TZ=America/Sao_Paulo
 ENV DOCKER_ENV=true
