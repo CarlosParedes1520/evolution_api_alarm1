@@ -1,6 +1,6 @@
 FROM node:20-alpine AS builder
 
-RUN apk update && apk add --no-cache git ffmpeg wget curl bash openssl python3 make g++ build-base vips-dev libvips libvips-tools
+RUN apk update && apk add --no-cache git ffmpeg wget curl bash openssl python3 make g++ build-base vips vips-tools vips-dev
 
 
 LABEL version="2.3.1" description="Api to control whatsapp features through http requests." 
