@@ -14,7 +14,7 @@ COPY ./package*.json ./
 COPY ./tsconfig.json ./
 COPY ./tsup.config.ts ./
 
-RUN npm cache clean --force && npm ci --silent
+RUN npm cache clean --force && npm install --no-scripts
 
 COPY ./src ./src
 COPY ./public ./public
