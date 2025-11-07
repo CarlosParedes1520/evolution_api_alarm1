@@ -7,6 +7,7 @@ LABEL version="2.3.1" description="Api to control whatsapp features through http
 LABEL maintainer="Davidson Gomes" git="https://github.com/DavidsonGomes"
 LABEL contact="contato@evolution-api.com"
 
+
 WORKDIR /evolution
 
 COPY ./package*.json ./
