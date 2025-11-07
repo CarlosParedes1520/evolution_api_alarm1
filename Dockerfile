@@ -14,7 +14,7 @@ COPY ./package*.json ./
 COPY ./tsconfig.json ./
 COPY ./tsup.config.ts ./
 
-RUN npm cache clean --force && npm install --no-scripts
+RUN npm cache clean --force && npm ci --silent
 
 COPY ./src ./src
 COPY ./public ./public
@@ -35,7 +35,7 @@ FROM node:20-slim AS final
 
 RUN apt-get update && \
     apt-get install -y tzdata ffmpeg bash openssl \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists//*
 
 ENV TZ=America/Sao_Paulo
 ENV DOCKER_ENV=true
