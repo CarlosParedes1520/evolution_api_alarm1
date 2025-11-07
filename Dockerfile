@@ -13,7 +13,7 @@ COPY ./package*.json ./
 COPY ./tsconfig.json ./
 COPY ./tsup.config.ts ./
 
-RUN npm cache clean --force && npm ci --ignore-scripts
+RUN npm cache clean --force && npm install --no-scripts
 
 COPY ./src ./src
 COPY ./public ./public
