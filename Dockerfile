@@ -1,7 +1,7 @@
 FROM node:20-slim AS builder
 
 
-RUN apt-get update && apt-get install -y git ffmpeg wget curl bash openssl build-essential python3 libvips-dev libvips vips-tools && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y git ffmpeg wget curl bash openssl build-essential python3 libvips-dev libvips && rm -rf /var/lib/apt/lists/*
 
 LABEL version="2.3.1" description="Api to control whatsapp features through http requests." 
 LABEL maintainer="Davidson Gomes" git="https://github.com/DavidsonGomes"
