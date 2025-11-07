@@ -1,6 +1,6 @@
 FROM node:20-slim AS builder
 
-RUN apt-get update && apt-get install -y git ffmpeg wget curl bash openssl build-essential python3 libvips-dev  libvips vips-tools && rm -rf /var/lib/apt/lists/* 
+RUN apt-get update && apt-get install -y git ffmpeg wget curl bash openssl build-essential python3 libvips-dev libvips-tools && rm -rf /var/lib/apt/lists//* 
 
 
 LABEL version="2.3.1" description="Api to control whatsapp features through http requests." 
@@ -34,12 +34,27 @@ FROM node:20-slim AS final
 
 RUN apt-get update && \
     apt-get install -y tzdata ffmpeg bash openssl \
-    && rm -rf /var/lib/apt/lists//*
+    && rm -rf /var/lib/apt/lists/*
 
 ENV TZ=America/Sao_Paulo
 ENV DOCKER_ENV=true
 
 WORKDIR /evolution
+
+COPY --from=builder /evolution/package.json ./package.json
+COPY --from=builder /evolution/package-lock.json ./package-lock.json
+
+COPY --from=builder /evolution/node_modules ./node_modules
+COPY --from=builder /evolution/dist ./dist
+COPY --from=builder /evolution/prisma ./prisma
+COPY --from=builder /evolution/manager ./manager
+COPY --from=builder /evolution/public ./public
+COPY --from=builder /evolution/.env ./.env
+COPY --from=builder /evolution/Docker ./Docker
+COPY --from=builder /evolution/runWithProvider.js ./runWithProvider.js
+COPY --from=builder /evolution/tsup.config.ts ./tsup.config.ts
+
+ENV DOCKER_ENV=true
 
 
 EXPOSE 8080
