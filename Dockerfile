@@ -8,12 +8,11 @@ RUN apk update && \
     curl \
     bash \
     openssl \
-    # 👇 CORRECCIÓN CRÍTICA: Añadir Build Essentials para 'sharp' y nativas 👇
-    **python3 \
+    python3 \
     make \
     g++ \
-    build-base**
-    # --------------------------------------------------------------------------
+    build-base
+
 
 LABEL version="2.3.1" description="Api to control whatsapp features through http requests." 
 LABEL maintainer="Davidson Gomes" git="https://github.com/DavidsonGomes"
