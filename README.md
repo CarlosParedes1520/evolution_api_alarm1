@@ -1,75 +1,39 @@
 # ---------- BUILDER ----------
 FROM node:20-slim AS builder
-
 RUN apt-get update && apt-get install -y \
-  git ca-certificates \
-  build-essential python3 pkg-config \
+  git ca-certificates build-essential python3 pkg-config \
   curl bash openssl dos2unix \
-  libvips-dev libvips \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /evolution
-ENV npm_config_python=/usr/bin/python3
-# Si usas sharp, esto fuerza binarios precompilados (puedes dejarlo)
-ENV npm_config_build_from_source=false
-ENV npm_config_sharp_ignore_global_libvips=1
-
-COPY ./package*.json ./
-COPY ./tsconfig.json ./
-COPY ./tsup.config.ts ./
-
-# Debug útil
-RUN which git && git --version && node -v && npm -v
-
-# Instalar deps según lockfile
+COPY package*.json ./
 RUN npm ci --no-audit --no-fund
 
-# Copiar el resto
-COPY ./src ./src
-COPY ./public ./public
-COPY ./prisma ./prisma
-COPY ./manager ./manager
-COPY ./.env.example ./.env
-COPY ./runWithProvider.js ./
-COPY ./Docker ./Docker
-
-# Scripts en formato UNIX y con permisos
+COPY . .
 RUN chmod +x ./Docker/scripts/* && dos2unix ./Docker/scripts/*
 
-# Generar DB (si tu script lo requiere)
-RUN ./Docker/scripts/generate_database.sh
+# Si tienes un script de DB:
+# RUN ./Docker/scripts/generate_database.sh
 
-# Compilar
 RUN npm run build
 
-
-# ---------- FINAL (RUNTIME) ----------
+# ---------- FINAL ----------
 FROM node:20-slim AS final
-
 RUN apt-get update && apt-get install -y \
   tzdata ffmpeg bash openssl curl ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-ENV TZ=America/Sao_Paulo
-ENV DOCKER_ENV=true
-ENV NODE_ENV=production
-
 WORKDIR /evolution
+ENV NODE_ENV=production DOCKER_ENV=true TZ=America/Sao_Paulo
 
-# Copia lo necesario del builder
-COPY --from=builder /evolution/package.json ./package.json
-COPY --from=builder /evolution/package-lock.json ./package-lock.json
+COPY --from=builder /evolution/package*.json ./
 COPY --from=builder /evolution/node_modules ./node_modules
 COPY --from=builder /evolution/dist ./dist
 COPY --from=builder /evolution/prisma ./prisma
 COPY --from=builder /evolution/manager ./manager
 COPY --from=builder /evolution/public ./public
-COPY --from=builder /evolution/.env ./.env
 COPY --from=builder /evolution/Docker ./Docker
-COPY --from=builder /evolution/runWithProvider.js ./runWithProvider.js
-COPY --from=builder /evolution/tsup.config.ts ./tsup.config.ts
+COPY --from=builder /evolution/runWithProvider.js ./
 
 EXPOSE 8080
-
-# Si tu deploy_database.sh usa bash, mantenlo así
 ENTRYPOINT ["/bin/bash", "-c", ". ./Docker/scripts/deploy_database.sh && npm run start:prod" ]
