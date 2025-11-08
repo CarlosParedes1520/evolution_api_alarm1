@@ -48,6 +48,15 @@
     "url": "https://github.com/EvolutionAPI/evolution-api/issues"
   },
   "homepage": "https://github.com/EvolutionAPI/evolution-api#readme",
+  "overrides": {
+    "libsignal": "npm:@whiskeysockets/libsignal@^2",
+    "@whiskeysockets/libsignal": "^2",
+    "libsignal-node": "npm:@whiskeysockets/libsignal-node@^2",
+    "@whiskeysockets/libsignal-node": "^2",
+    "\"@whiskeysockets/libsignal\"": "^2",
+    "\"libsignal-node\"": "npm:@whiskeysockets/libsignal-node@^2",
+    "\"@whiskeysockets/libsignal-node\"": "^2"
+  },
   "dependencies": {
     "@adiwajshing/keyed-db": "^0.2.4",
     "@aws-sdk/client-sqs": "^3.723.0",
@@ -86,7 +95,6 @@
     "minio": "^8.0.3",
     "multer": "^1.4.5-lts.1",
     "nats": "^2.29.1",
-    "node-addon-api": "^7.0.0",
     "node-cache": "^5.1.2",
     "node-cron": "^3.0.3",
     "openai": "^4.77.3",
@@ -123,6 +131,7 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-simple-import-sort": "^10.0.0",
     "prettier": "^3.4.2",
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.20.3",

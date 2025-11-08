@@ -5,21 +5,22 @@ RUN apt-get update && apt-get install -y \
   git ca-certificates \
   build-essential python3 pkg-config \
   curl bash openssl dos2unix \
+  libvips libvips-dev \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /evolution
+
+# 👉 Usar libvips del sistema y compilar con node-gyp de forma confiable
 ENV npm_config_python=/usr/bin/python3
-ENV npm_config_build_from_source=false
-ENV npm_config_sharp_ignore_global_libvips=1
+ENV npm_config_build_from_source=true
+ENV npm_config_sharp_ignore_global_libvips=0
 
 COPY package*.json ./
 COPY tsconfig.json ./
 COPY tsup.config.ts ./
 
-# Verificación rápida
 RUN which git && git --version && node -v && npm -v
 
-# 🚫 NO uses --no-scripts; permite prepare de deps Git
 RUN npm ci --no-audit --no-fund
 
 COPY src ./src
@@ -32,9 +33,7 @@ COPY Docker ./Docker
 
 RUN chmod +x ./Docker/scripts/* && dos2unix ./Docker/scripts/*
 
-# (Opcional) Si aplica en build:
-# RUN ./Docker/scripts/generate_database.sh
-
+# RUN ./Docker/scripts/generate_database.sh  # si aplica en build
 RUN npm run build
 RUN npm prune --omit=dev
 
