@@ -3,21 +3,10 @@
 # ------------------------------------------------------------------
 FROM node:20-slim AS builder
 
-# Agregamos todas las dependencias de compilación y librerías nativas (libvips, libglib2.0-dev)
-RUN apt-get update && \
-    apt-get install -y \
-    git \
-    ffmpeg \
-    wget \
-    curl \
-    bash \
-    openssl \
-    build-essential \
-    python3 \
-    # Dependencias de Sharp/VIPS (libvips-dev proporciona las cabeceras glib)
-    libvips-dev \ 
-    libvips \
-    vips-tools \
+# En la etapa builder
+RUN apt-get update && apt-get install -y \
+    git ffmpeg wget curl bash openssl build-essential python3 \
+    libvips-dev libvips \
     && rm -rf /var/lib/apt/lists/*
     
 LABEL version="2.3.1" description="Api to control whatsapp features through http requests." 
