@@ -1,7 +1,7 @@
 # ---------- BUILDER ----------
 FROM node:20-slim AS builder
 
-# Paquetes necesarios para dependencias nativas y GIT
+# Paquetes necesarios (incluye git para deps desde Git)
 RUN apt-get update && apt-get install -y \
   git ca-certificates \
   build-essential python3 pkg-config \
@@ -10,20 +10,20 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /evolution
 
-# Ajustes útiles para node-gyp y sharp (seguro dejarlos)
+# Ajustes útiles para node-gyp y sharp
 ENV npm_config_python=/usr/bin/python3
 ENV npm_config_build_from_source=false
 ENV npm_config_sharp_ignore_global_libvips=1
 
-# Copiamos metadatos primero para cachear npm ci
+# Copia metadatos primero (mejor cache de npm)
 COPY package*.json ./
 COPY tsconfig.json ./
 COPY tsup.config.ts ./
 
-# Verificación rápida
+# Verifica que git esté disponible (debug)
 RUN which git && git --version && node -v && npm -v
 
-# Instalar dependencias (NO usar --no-scripts para que corra prepare)
+# IMPORTANTE: NO usar --no-scripts para permitir prepare en deps de Git
 RUN npm ci --no-audit --no-fund
 
 # Copiar el resto del proyecto
@@ -38,14 +38,13 @@ COPY Docker ./Docker
 # Normalizar EOL y permisos de scripts
 RUN chmod +x ./Docker/scripts/* && dos2unix ./Docker/scripts/*
 
-# (Opcional) Generar base de datos / Prisma si tu proyecto lo requiere
-# Descomenta si aplica:
+# (Opcional) Si tu script realmente debe correr en build:
 # RUN ./Docker/scripts/generate_database.sh
 
-# Compilar
+# Build
 RUN npm run build
 
-# Podar devDependencies para runtime más liviano
+# Podar devDependencies para un runtime más liviano
 RUN npm prune --omit=dev
 
 
@@ -62,7 +61,7 @@ ENV DOCKER_ENV=true
 
 WORKDIR /evolution
 
-# Copiar solo lo necesario desde el builder
+# Copiar artefactos de builder
 COPY --from=builder /evolution/package.json ./package.json
 COPY --from=builder /evolution/package-lock.json ./package-lock.json
 COPY --from=builder /evolution/node_modules ./node_modules
@@ -77,5 +76,4 @@ COPY --from=builder /evolution/tsup.config.ts ./tsup.config.ts
 
 EXPOSE 8080
 
-# Usa bash porque el script es .sh y encadenamos comandos
 ENTRYPOINT ["/bin/bash", "-c", ". ./Docker/scripts/deploy_database.sh && npm run start:prod" ]
