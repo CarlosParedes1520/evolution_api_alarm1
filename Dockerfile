@@ -56,7 +56,9 @@ FROM node:20-slim AS final
 
 # Paquetes de ejecución
 RUN apt-get update && \
-    apt-get install -y tzdata ffmpeg bash openssl \
+    apt-get install -y \
+    git ffmpeg wget curl bash openssl build-essential python3 \
+    libvips-dev libvips \
     && rm -rf /var/lib/apt/lists/*
 
 ENV TZ=America/Sao_Paulo
