@@ -1,66 +1,65 @@
-# ---------- BUILDER ----------
-FROM node:20-bookworm-slim AS builder
+# ------------------------------------------------------------------
+# ETAPA BUILDER: USANDO NODE:20-SLIM Y APT-GET
+# ------------------------------------------------------------------
+FROM node:20-slim AS builder
 
-ARG CACHE_BUSTER=2025-11-08-01
-RUN echo ">>> USING BOOKWORM builder | CACHE_BUSTER=${CACHE_BUSTER}"
-
-# En la etapa builder
-# En la etapa builder
+# Agregamos todas las dependencias de compilación y librerías nativas (libvips, libglib2.0-dev)
 RUN apt-get update && \
     apt-get install -y \
-    git ca-certificates \
-    build-essential python3 pkg-config \
-    curl bash openssl dos2unix \
-    # 👇 ESTOS PAQUETES DEBEN ESTAR SEPARADOS Y SIN SÍMBOLOS 👇
+    git \
+    ffmpeg \
+    wget \
+    curl \
+    bash \
+    openssl \
+    build-essential \
+    python3 \
+    # Dependencias de Sharp/VIPS (libvips-dev proporciona las cabeceras glib)
     libvips-dev \ 
-    libglib2.0-dev \ 
-    # --------------------------------------------------------
+    libvips \
+    vips-tools \
     && rm -rf /var/lib/apt/lists/*
-
-# Pruebas visibles en logs (deben aparecer sí o sí)
-RUN node -v && npm -v && git --version
-RUN dpkg -l | grep -E 'libvips|vips' || true
-RUN pkg-config --modversion vips-cpp || true
+    
+LABEL version="2.3.1" description="Api to control whatsapp features through http requests." 
+LABEL maintainer="Davidson Gomes" git="https://github.com/DavidsonGomes"
+LABEL contact="contato@evolution-api.com"
 
 WORKDIR /evolution
 
-# sharp: compilar con libvips del sistema
-ENV npm_config_python=/usr/bin/python3
-ENV npm_config_build_from_source=true
-ENV npm_config_sharp_ignore_global_libvips=0
+COPY ./package*.json ./
+COPY ./tsconfig.json ./
+COPY ./tsup.config.ts ./
 
-COPY package*.json ./
-COPY tsconfig.json ./
-COPY tsup.config.ts ./
+# CORRECCIÓN FINAL: Instalación Forzada de NPM
+# Esto ignora el script de compilación fallido de 'baileys' y resuelve el 'exit code: 2'.
+RUN npm cache clean --force && npm install --no-scripts
 
-RUN npm ci --no-audit --no-fund
+COPY ./src ./src
+COPY ./public ./public
+COPY ./prisma ./prisma
+COPY ./manager ./manager
+COPY ./.env.example ./.env
+COPY ./runWithProvider.js ./
 
-COPY src ./src
-COPY public ./public
-COPY prisma ./prisma
-COPY manager ./manager
-COPY .env.example ./.env
-COPY runWithProvider.js ./
-COPY Docker ./Docker
+COPY ./Docker ./Docker
 
 RUN chmod +x ./Docker/scripts/* && dos2unix ./Docker/scripts/*
 
-# RUN ./Docker/scripts/generate_database.sh  # si lo necesitas en build
+RUN ./Docker/scripts/generate_database.sh
+
 RUN npm run build
-RUN npm prune --omit=dev
 
-# ---------- FINAL ----------
-FROM node:20-bookworm-slim AS final
+# ------------------------------------------------------------------
+# ETAPA FINAL: ENTORNO DE EJECUCIÓN SLIM
+# ------------------------------------------------------------------
+FROM node:20-slim AS final
 
-ARG CACHE_BUSTER=2025-11-08-01
-RUN echo ">>> USING BOOKWORM final | CACHE_BUSTER=${CACHE_BUSTER}"
-
-RUN apt-get update && apt-get install -y \
-  tzdata ffmpeg bash openssl curl ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
+# Paquetes de ejecución
+RUN apt-get update && \
+    apt-get install -y tzdata ffmpeg bash openssl \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV TZ=America/Sao_Paulo
-ENV NODE_ENV=production
 ENV DOCKER_ENV=true
 
 WORKDIR /evolution
@@ -77,5 +76,9 @@ COPY --from=builder /evolution/Docker ./Docker
 COPY --from=builder /evolution/runWithProvider.js ./runWithProvider.js
 COPY --from=builder /evolution/tsup.config.ts ./tsup.config.ts
 
+ENV DOCKER_ENV=true
+
 EXPOSE 8080
+
+# ENTRYPOINT corregido para la ruta interna
 ENTRYPOINT ["/bin/bash", "-c", ". ./Docker/scripts/deploy_database.sh && npm run start:prod" ]
