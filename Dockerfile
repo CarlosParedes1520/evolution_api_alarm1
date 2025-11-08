@@ -1,22 +1,32 @@
 # ---------- BUILDER ----------
-FROM node:20-slim AS builder
+FROM node:20-bookworm-slim AS builder
+
+ARG CACHE_BUSTER=2025-11-08-01
+RUN echo ">>> USING BOOKWORM builder | CACHE_BUSTER=${CACHE_BUSTER}"
 
 RUN apt-get update && apt-get install -y \
   git ca-certificates \
   build-essential python3 pkg-config \
   curl bash openssl dos2unix \
+  libvips-dev \
   && rm -rf /var/lib/apt/lists/*
 
+# Pruebas visibles en logs (deben aparecer sí o sí)
+RUN node -v && npm -v && git --version
+RUN dpkg -l | grep -E 'libvips|vips' || true
+RUN pkg-config --modversion vips-cpp || true
+
 WORKDIR /evolution
+
+# sharp: compilar con libvips del sistema
 ENV npm_config_python=/usr/bin/python3
-ENV npm_config_build_from_source=false
-ENV npm_config_sharp_ignore_global_libvips=1
+ENV npm_config_build_from_source=true
+ENV npm_config_sharp_ignore_global_libvips=0
 
 COPY package*.json ./
 COPY tsconfig.json ./
 COPY tsup.config.ts ./
 
-RUN which git && git --version && node -v && npm -v
 RUN npm ci --no-audit --no-fund
 
 COPY src ./src
@@ -29,14 +39,15 @@ COPY Docker ./Docker
 
 RUN chmod +x ./Docker/scripts/* && dos2unix ./Docker/scripts/*
 
-# Si tu script debe correr en build, descomenta:
-# RUN ./Docker/scripts/generate_database.sh
-
+# RUN ./Docker/scripts/generate_database.sh  # si lo necesitas en build
 RUN npm run build
 RUN npm prune --omit=dev
 
 # ---------- FINAL ----------
-FROM node:20-slim AS final
+FROM node:20-bookworm-slim AS final
+
+ARG CACHE_BUSTER=2025-11-08-01
+RUN echo ">>> USING BOOKWORM final | CACHE_BUSTER=${CACHE_BUSTER}"
 
 RUN apt-get update && apt-get install -y \
   tzdata ffmpeg bash openssl curl ca-certificates \
