@@ -5,7 +5,17 @@ ARG CACHE_BUSTER=2025-11-08-01
 RUN echo ">>> USING BOOKWORM builder | CACHE_BUSTER=${CACHE_BUSTER}"
 
 # En la etapa builder
-RUN apt-get update && apt-get install -y git ca-certificates build-essential python3 pkg-config curl bash openssl dos2unix libvips-dev **libglib2.0-dev** && rm -rf /var/lib/apt/lists/*
+# En la etapa builder
+RUN apt-get update && \
+    apt-get install -y \
+    git ca-certificates \
+    build-essential python3 pkg-config \
+    curl bash openssl dos2unix \
+    # 👇 ESTOS PAQUETES DEBEN ESTAR SEPARADOS Y SIN SÍMBOLOS 👇
+    libvips-dev \ 
+    libglib2.0-dev \ 
+    # --------------------------------------------------------
+    && rm -rf /var/lib/apt/lists/*
 
 # Pruebas visibles en logs (deben aparecer sí o sí)
 RUN node -v && npm -v && git --version
